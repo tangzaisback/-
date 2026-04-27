@@ -245,21 +245,21 @@ body::before {
 }
 
 .result-main {
-  font-size: clamp(1.5rem, 6vw, 2.4rem);
+  font-size: clamp(1.1rem, 6vw, 1.4rem);
   font-weight: 300;
   line-height: 1.75;
   text-align: center;
   color: var(--text-primary);
   word-break: keep-all;
   letter-spacing: -0.01em;
-  margin-bottom: 2.2rem;
+  margin-bottom: 1rem;
 }
 
 .result-rule {
   width: 28px;
   height: 1px;
   background: rgba(240,230,211,0.14);
-  margin: 0 auto 2rem;
+  margin: 0 auto 1rem;
 }
 
 .result-meta {
@@ -267,7 +267,7 @@ body::before {
   flex-direction: column;
   align-items: center;
   gap: 0.55rem;
-  margin-bottom: 2.2rem;
+  margin-bottom: 0.5rem;
 }
 
 .meta-item {
@@ -285,7 +285,7 @@ body::before {
 #solar-term-wheel {
   display: flex;
   justify-content: center;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.1rem;
 }
 
 #result-season {
@@ -295,6 +295,72 @@ body::before {
   color: var(--text-secondary);
   text-align: center;
   margin-bottom: 3rem;
+}
+
+.save-btn {
+  background: none;
+  border: 1px solid rgba(201,169,110,0.35);
+  color: var(--accent);
+  font-family: 'Noto Serif KR', Georgia, serif;
+  font-size: 0.78rem;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: border-color 0.3s ease, opacity 0.2s ease;
+  margin-top: 0.6rem;
+  min-height: 36px;
+}
+
+.save-btn:hover  { border-color: rgba(201,169,110,0.7); }
+.save-btn:active { opacity: 0.6; }
+.save-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* overlay 안 버튼은 margin-top 없음 */
+.save-btn--overlay { margin-top: 0; }
+
+/* ────────────────────────────────────────
+   SAVE OVERLAY
+──────────────────────────────────────── */
+
+.save-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(6,6,14,0.96);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.save-overlay.visible { display: flex; }
+
+.save-preview {
+  max-width: 100%;
+  max-height: 55vh;
+  border-radius: 2px;
+  box-shadow: 0 0 48px rgba(0,0,0,0.6);
+  object-fit: contain;
+}
+
+.save-hint {
+  font-size: 0.82rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.save-overlay-btns {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 /* ────────────────────────────────────────
@@ -307,11 +373,49 @@ body::before {
 .screen--entering .result-meta       { animation: fadeUp 0.7s 0.55s both; }
 .screen--entering #solar-term-wheel  { animation: fadeUp 0.7s 0.70s both; }
 .screen--entering #result-season     { animation: fadeUp 0.7s 0.82s both; }
-.screen--entering .reset-btn         { animation: fadeUp 0.7s 0.95s both; }
+.screen--entering .save-btn          { animation: fadeUp 0.7s 0.95s both; }
+.screen--entering .reset-btn         { animation: fadeUp 0.7s 1.05s both; }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ────────────────────────────────────────
+   IMG RENDER (off-screen 540×960 → 1080×1920px)
+──────────────────────────────────────── */
+
+#img-render {
+  position: fixed;
+  left: -1200px;
+  top: 0;
+  width: 540px;
+  height: 960px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 2.5rem;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 50% -5%, rgba(201,169,110,0.06) 0%, transparent 55%),
+    #06060e;
+}
+
+#img-render #ir-moon   { margin-bottom: 2.2rem; }
+#img-render #ir-main   { margin-bottom: 1rem; font-size: clamp(1.1rem, 6vw, 1.4rem); }
+#img-render #ir-rule   { margin: 0 auto 1rem; }
+#img-render #ir-meta   { margin-bottom: 0.5rem; }
+#img-render #ir-wheel  { display: flex; justify-content: center; margin-bottom: 0.1rem; }
+#img-render #ir-season {
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 0;
 }
 
 @media (max-height: 700px) {

@@ -44,9 +44,31 @@
     <div id="resultMeta" class="result-meta"></div>
     <div id="solar-term-wheel"></div>
     <p id="result-season"></p>
+    <button id="saveBtn" class="save-btn">이미지로 저장</button>
     <button id="resetBtn" class="reset-btn cta-btn">돌아가기</button>
   </div>
 
+  <!-- ── SAVE OVERLAY ──────────────────────── -->
+  <div id="save-overlay" class="save-overlay">
+    <img id="save-preview" class="save-preview" alt="생일 결과 이미지" />
+    <p id="save-hint" class="save-hint"></p>
+    <div class="save-overlay-btns">
+      <button id="save-download-btn" class="save-btn save-btn--overlay" style="display:none">다운로드</button>
+      <button id="save-close-btn" class="save-btn save-btn--overlay">닫기</button>
+    </div>
+  </div>
+
+  <!-- ── IMG RENDER (off-screen, 540×960 → 1080×1920px PNG) ── -->
+  <div id="img-render" aria-hidden="true">
+    <div id="ir-moon" class="moon-icon"></div>
+    <p id="ir-main" class="result-main"></p>
+    <div id="ir-rule" class="result-rule"></div>
+    <div id="ir-meta" class="result-meta"></div>
+    <div id="ir-wheel"></div>
+    <p id="ir-season"></p>
+  </div>
+
+  <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
   <script src="https://unpkg.com/korean-lunar-calendar@0.3.6/dist/korean-lunar-calendar.min.js"></script>
   <script>
     /* ------------------------------------------------------------------ */
@@ -290,7 +312,7 @@
         parts.push(
           `<text x="${f(lx)}" y="${(ly + 3.5).toFixed(2)}" text-anchor="middle" ` +
           `font-family="'Noto Serif KR',Georgia,serif" font-size="10" font-weight="300" ` +
-          `fill="${s.labelColor}">${s.label}</text>`
+          `fill="rgba(255,255,255,0.85)">${s.label}</text>`
         );
       }
 
@@ -391,7 +413,7 @@
         wheelEl.innerHTML = getSolarTermWheelSVG(term.name, nextTerm?.name, progress);
 
         if (season && nextTerm) {
-          seasonEl.textContent = `${season.label} · ${term.name}${josa(term.name)} ${nextTerm.name} 사이`;
+          seasonEl.textContent = `${term.name}${josa(term.name)} ${nextTerm.name} 사이`;
         } else if (season) {
           seasonEl.textContent = season.label;
         } else {
@@ -447,8 +469,83 @@
       showResult(year, month, day, lunar, term, nextTerm);
     }
 
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    async function saveImage() {
+      const btn      = document.getElementById('saveBtn');
+      const renderEl = document.getElementById('img-render');
+      const overlay  = document.getElementById('save-overlay');
+
+      btn.textContent = '저장 중...';
+      btn.disabled = true;
+
+      document.getElementById('ir-moon').innerHTML     = moonIcon.innerHTML;
+      document.getElementById('ir-main').innerHTML     = resultMain.innerHTML;
+      document.getElementById('ir-meta').innerHTML     = resultMeta.innerHTML;
+      document.getElementById('ir-wheel').innerHTML    = wheelEl.innerHTML;
+      document.getElementById('ir-season').textContent = seasonEl.textContent;
+
+      await document.fonts.ready;
+
+      /* 오버레이(z-index:100)로 화면을 먼저 덮은 뒤,
+         renderEl을 뷰포트 안으로 이동(z-index:50)해 브라우저가 페인트하도록 강제 */
+      overlay.classList.add('visible');
+      renderEl.style.left    = '0';
+      renderEl.style.zIndex  = '50';
+
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      try {
+        const dataUrl = await htmlToImage.toPng(renderEl, {
+          width: 540,
+          height: 960,
+          pixelRatio: 2,
+          fontEmbedCSS: true,
+        });
+
+        const previewImg  = document.getElementById('save-preview');
+        const hint        = document.getElementById('save-hint');
+        const downloadBtn = document.getElementById('save-download-btn');
+
+        previewImg.src = dataUrl;
+
+        if (isIOS) {
+          hint.textContent = '이미지를 꾹 눌러서 저장하세요';
+          downloadBtn.style.display = 'none';
+        } else {
+          hint.textContent = '';
+          downloadBtn.style.display = '';
+          downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.download = `내생일_${birthdateInput.value}.png`;
+            link.href = dataUrl;
+            link.click();
+          };
+        }
+      } catch (e) {
+        console.error(e);
+        overlay.classList.remove('visible');
+      } finally {
+        renderEl.style.left   = '-1200px';
+        renderEl.style.zIndex = '';
+        btn.textContent = '이미지로 저장';
+        btn.disabled = false;
+      }
+    }
+
+    function closeSaveOverlay() {
+      const overlay = document.getElementById('save-overlay');
+      overlay.classList.remove('visible');
+      document.getElementById('save-preview').src = '';
+    }
+
     convertBtn.addEventListener('click', convert);
     resetBtn.addEventListener('click', reset);
+    document.getElementById('saveBtn').addEventListener('click', saveImage);
+    document.getElementById('save-close-btn').addEventListener('click', closeSaveOverlay);
+    document.getElementById('save-overlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeSaveOverlay();
+    });
     birthdateInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') convert();
     });
